@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using JustSaying.Messaging.MessageProcessingStrategies;
 using JustSaying.Messaging.Monitoring;
 using NSubstitute;
@@ -84,7 +85,7 @@ namespace JustSaying.Messaging.UnitTests.MessageProcessingStrategies
             _fakeMonitor.Received().IncrementThrottlingStatistic();
         }
 
-        private void ListenLoopExecuted(Queue<Action> actions)
+        private void ListenLoopExecuted(Queue<Task> actions)
         {
             while (actions.Any())
             {
@@ -98,9 +99,9 @@ namespace JustSaying.Messaging.UnitTests.MessageProcessingStrategies
             }
         }
 
-        private IEnumerable<Action> GetFromFakeSnsQueue(Queue<Action> actions)
+        private IEnumerable<Task> GetFromFakeSnsQueue(Queue<Task> actions)
         {
-            var batch = new List<Action>();
+            var batch = new List<Task>();
             for (var i = 0; i != _fakeAmazonBatchSize; i++)
             {
                 batch.Add(actions.Dequeue());
@@ -108,9 +109,9 @@ namespace JustSaying.Messaging.UnitTests.MessageProcessingStrategies
             return batch;
         }
 
-        private Queue<Action> BuildFakeIncomingMessages(int numberOfMessagesToCreate, int maximumDurationASingleMessageWillTakeToExecute = 10)
+        private Queue<Task> BuildFakeIncomingMessages(int numberOfMessagesToCreate, int maximumDurationASingleMessageWillTakeToExecute = 10)
         {
-            var actions = new Queue<Action>();
+            var actions = new Queue<Task>();
             for (var i = 0; i != numberOfMessagesToCreate; i++)
             {
                 var random = new Random();
@@ -119,7 +120,7 @@ namespace JustSaying.Messaging.UnitTests.MessageProcessingStrategies
                     Thread.Sleep(random.Next(maximumDurationASingleMessageWillTakeToExecute));
                     Interlocked.Increment(ref _actionsProcessed);
                 });
-                actions.Enqueue(action);
+                actions.Enqueue(new Task(action));
             }
 
             return actions;

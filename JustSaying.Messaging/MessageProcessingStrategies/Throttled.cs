@@ -66,19 +66,18 @@ namespace JustSaying.Messaging.MessageProcessingStrategies
             _messageMonitor.HandleThrottlingTime(watch.ElapsedMilliseconds);
         }
 
-        public void ProcessMessage(Action action)
-        {
-            var task = new Task(action);
-            task.ContinueWith(MarkTaskAsComplete, TaskContinuationOptions.ExecuteSynchronously);
+        public void ProcessMessage(Task action)
+        {            
+            action.ContinueWith(MarkTaskAsComplete, TaskContinuationOptions.ExecuteSynchronously);
             
             Interlocked.Increment(ref _activeTaskCount);
             
             lock (_activeTasks)
             {
-                _activeTasks.Add(task);
+                _activeTasks.Add(action);
             }
 
-            task.Start();
+            action.Start();
         }
 
         private void MarkTaskAsComplete(Task t)

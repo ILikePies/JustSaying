@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 
 namespace JustSaying.Messaging.MessageProcessingStrategies
 {
@@ -8,9 +9,9 @@ namespace JustSaying.Messaging.MessageProcessingStrategies
         {
         }
 
-        public void ProcessMessage(Action action)
+        public void ProcessMessage(Task action)
         {
-            action.BeginInvoke(null, null);
+            action.Start();
         }
     }
 }
