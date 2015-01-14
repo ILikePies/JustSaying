@@ -6,7 +6,7 @@ namespace JustSaying.Messaging.MessageHandling
     /// Async message handlers
     /// </summary>
     /// <typeparam name="T">Type of message to be handled</typeparam>
-    public interface IHandlerAsync<in T>
+    public interface IAsyncHandler<in T>
     {
         /// <summary>
         /// Handle a message of a given type
