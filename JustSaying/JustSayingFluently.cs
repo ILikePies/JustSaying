@@ -208,14 +208,14 @@ namespace JustSaying
         /// <typeparam name="T">Message type to be handled</typeparam>
         /// <param name="handler">Handler for the message type</param>
         /// <returns></returns>
-        public IHaveFulfilledSubscriptionRequirements WithMessageHandler<T>(IHandler<T> handler) where T : Message
+        public IHaveFulfilledSubscriptionRequirements WithMessageHandler<T>(IMayBeSyncOrAsyncHandler<T> handler) where T : Message
         {
             return _subscriptionConfig.SubscriptionType == SubscriptionType.PointToPoint
                 ? PointToPointHandler(handler)
                 : TopicHandler(handler);
         }
 
-        private IHaveFulfilledSubscriptionRequirements TopicHandler<T>(IHandler<T> handler) where T : Message
+        private IHaveFulfilledSubscriptionRequirements TopicHandler<T>(IMayBeSyncOrAsyncHandler<T> handler) where T : Message
         {
             var messageTypeName = typeof(T).Name.ToLower();
             ConfigureSqsSubscriptionViaTopic(messageTypeName);
@@ -228,13 +228,20 @@ namespace JustSaying
             }
 
             Bus.SerialisationRegister.AddSerialiser<T>(_serialisationFactory.GetSerialiser<T>());
-            Bus.AddMessageHandler(handler);
+            if (handler is IHandler<T>)
+            {
+                Bus.AddMessageHandler((IHandler<T>)handler);
+            }
+            else
+            {
+                Bus.AddMessageHandler((IAsyncHandler<T>)handler);
+            }
             Log.Info(string.Format("Added a message handler - Topic: {0}, QueueName: {1}, HandlerName: {2}", _subscriptionConfig.Topic, _subscriptionConfig.QueueName, handler.GetType().Name));
 
             return this;
         }
 
-        private IHaveFulfilledSubscriptionRequirements PointToPointHandler<T>(IHandler<T> handler) where T : Message
+        private IHaveFulfilledSubscriptionRequirements PointToPointHandler<T>(IMayBeSyncOrAsyncHandler<T> handler) where T : Message
         {
             var messageTypeName = typeof(T).Name.ToLower();
             ConfigureSqsSubscription(messageTypeName);
@@ -247,7 +254,14 @@ namespace JustSaying
             }
 
             Bus.SerialisationRegister.AddSerialiser<T>(_serialisationFactory.GetSerialiser<T>());
-            Bus.AddMessageHandler(handler);
+            if (handler is IHandler<T>)
+            {
+                Bus.AddMessageHandler((IHandler<T>) handler);
+            }
+            else
+            {
+                Bus.AddMessageHandler((IAsyncHandler<T>)handler);
+            }
             Log.Info(string.Format("Added an SQS message handler - MessageName: {0}, QueueName: {1}, HandlerName: {2}", messageTypeName, _subscriptionConfig.QueueName, handler.GetType().Name));
 
             return this;
@@ -373,7 +387,7 @@ namespace JustSaying
 
     public interface IFluentSubscription
     {
-        IHaveFulfilledSubscriptionRequirements WithMessageHandler<T>(IHandler<T> handler) where T : Message;
+        IHaveFulfilledSubscriptionRequirements WithMessageHandler<T>(IMayBeSyncOrAsyncHandler<T> handler) where T : Message;
         IFluentSubscription ConfigureSubscriptionWith(Action<SqsReadConfiguration> config);
     }
 

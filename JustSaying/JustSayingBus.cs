@@ -68,6 +68,16 @@ namespace JustSaying
             }
         }
 
+        public void AddMessageHandler<T>(IAsyncHandler<T> handler) where T : Message
+        {
+            var topic = typeof(T).Name.ToLower();
+
+            foreach (var subscriber in _subscribersByTopic[topic])
+            {
+                subscriber.AddMessageHandler(handler);
+            }            
+        }
+
         public void AddMessagePublisher<T>(IMessagePublisher messagePublisher, string region) where T : Message
         {
             Dictionary<string, IMessagePublisher> publishersByTopic;

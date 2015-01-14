@@ -91,6 +91,7 @@
   <ItemGroup>
     <Compile Include="QueueCreation\WhenSerializingRedrivePolicy.cs" />
     <Compile Include="Sns\TopicByName\WhenPublishing.cs" />
+    <Compile Include="SqsNotificationListener\BaseQueuePollingTestAsync.cs" />
     <Compile Include="SqsNotificationListener\HandlingExceptions\WhenErrorHandlingActionIsNotProvided.cs" />
     <Compile Include="SqsNotificationListener\HandlingExceptions\WhenErrorHandlingActionIsProvided.cs" />
     <Compile Include="SqsNotificationListener\WhenExactlyOnceIsAppliedToHandler.cs" />
