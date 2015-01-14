@@ -13,6 +13,6 @@ namespace JustSaying.Messaging.MessageHandling
         /// </summary>
         /// <param name="message">Message to handle</param>
         /// <returns>Was handling successful?</returns>
-        Task<bool> Handle(T message);
+        Task<bool> HandleAsync(T message);
     }
 }
