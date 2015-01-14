@@ -23,7 +23,6 @@ namespace JustSaying.IntegrationTests
         protected override void Given()
         {
             TestEndpoint = DefaultEndpoint;
-            throw new NotImplementedException();
         }
 
         protected override JustSaying.JustSayingFluently CreateSystemUnderTest()
