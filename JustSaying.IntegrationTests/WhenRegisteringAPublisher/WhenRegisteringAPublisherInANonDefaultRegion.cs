@@ -1,3 +1,4 @@
+using Amazon;
 using Amazon.SimpleNotificationService.Model;
 using JustBehave;
 using JustSaying.Models;
@@ -12,6 +13,8 @@ namespace JustSaying.IntegrationTests.WhenRegisteringAPublisher
 
         protected override void Given()
         {
+            base.Given();
+            TestEndpoint = RegionEndpoint.EUCentral1;
             _topicName = "message";
 
             Configuration = new MessagingConfig();
