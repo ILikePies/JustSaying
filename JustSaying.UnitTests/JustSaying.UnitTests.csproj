@@ -87,6 +87,9 @@
     <Compile Include="CreateMe\WhenCreatingABus.cs" />
     <Compile Include="JustSayingBus\CustomMonitor.cs" />
     <Compile Include="JustSayingBus\GivenAServiceBusWithoutMonitoring.cs" />
+    <Compile Include="JustSayingBus\WhenPublishingMessagesAsyncAndThereIsATemporaryProblem.cs" />
+    <Compile Include="Results.cs" />
+    <Compile Include="JustSayingBus\WhenPublishingFailsAsync.cs" />
     <Compile Include="JustSayingBus\WhenPublishingMessageWithoutMonitor.cs" />
     <Compile Include="JustSayingFluentlyTestBase.cs" />
     <Compile Include="JustSayingFluently\AddingHandlers\WhenSubscribingPointToPoint.cs" />

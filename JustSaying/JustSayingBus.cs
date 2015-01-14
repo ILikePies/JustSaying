@@ -209,14 +209,14 @@ namespace JustSaying
             return result;
         }
 
-        private async Task<bool> PublishAsync(IMessagePublisher publisher, Message message, int attemptCount = 0)
+        private async Task<bool> PublishAsync(IMessagePublisher publisher, Message message)
         {
+            int attemptCount = 0;
             do
-            {
-                attemptCount++;
+            {                
                 try
                 {
-                    bool succeeded = await publisher.PublishAsync(message);
+                    var succeeded = await publisher.PublishAsync(message);
                     if (succeeded)
                     {
                         return succeeded;
@@ -227,7 +227,7 @@ namespace JustSaying
                     if (Monitor == null)
                         Log.Error("Publish: Monitor was null - duplicates will occur!");
 
-                    if (attemptCount == Config.PublishFailureReAttempts)
+                    if (attemptCount >= Config.PublishFailureReAttempts)
                     {
                         Monitor.IssuePublishingMessage();
 
@@ -236,8 +236,8 @@ namespace JustSaying
                     }
                 }
                 await TaskEx.Delay(Config.PublishFailureBackoffMilliseconds * attemptCount); // ToDo: Increase back off each time (exponential)
-
-            } while (attemptCount < Config.PublishFailureReAttempts);
+                attemptCount++;
+            } while (attemptCount >= Config.PublishFailureReAttempts);
             return false;
         }
     }
