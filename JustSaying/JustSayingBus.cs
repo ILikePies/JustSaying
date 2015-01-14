@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using JustSaying.Messaging;
 using JustSaying.Messaging.MessageHandling;
 using JustSaying.Messaging.MessageSerialisation;
@@ -193,6 +194,51 @@ namespace JustSaying
             };
 
             publish.BeginInvoke(null, null);
+        }
+
+        public async Task<bool> PublishAsync(Message message)
+        {
+            var watch = new System.Diagnostics.Stopwatch();
+            watch.Start();
+
+            var publisher = GetActivePublisherForMessage(message);
+            var result = await PublishAsync(publisher, message);
+
+            watch.Stop();
+            Monitor.PublishMessageTime(watch.ElapsedMilliseconds);
+            return result;
+        }
+
+        private async Task<bool> PublishAsync(IMessagePublisher publisher, Message message, int attemptCount = 0)
+        {
+            do
+            {
+                attemptCount++;
+                try
+                {
+                    bool succeeded = await publisher.PublishAsync(message);
+                    if (succeeded)
+                    {
+                        return succeeded;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    if (Monitor == null)
+                        Log.Error("Publish: Monitor was null - duplicates will occur!");
+
+                    if (attemptCount == Config.PublishFailureReAttempts)
+                    {
+                        Monitor.IssuePublishingMessage();
+
+                        Log.ErrorException(string.Format("Unable to publish message {0}", message.GetType().Name), ex);
+                        throw;
+                    }
+                }
+                await TaskEx.Delay(Config.PublishFailureBackoffMilliseconds * attemptCount); // ToDo: Increase back off each time (exponential)
+
+            } while (attemptCount < Config.PublishFailureReAttempts);
+            return false;
         }
     }
 }

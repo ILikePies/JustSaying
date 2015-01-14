@@ -1,3 +1,5 @@
+using System.Net;
+using System.Threading.Tasks;
 using Amazon.SQS;
 using Amazon.SQS.Model;
 using JustSaying.Messaging;
@@ -27,6 +29,17 @@ namespace JustSaying.AwsTools
                 //MessageBody = _serialisationRegister.GetSerialiser(message.GetType()).Serialise(message),
                 QueueUrl = Url
             });
+        }
+
+        public async Task<bool> PublishAsync(Message message)
+        {
+            var response = await Task.Factory.FromAsync<SendMessageRequest, SendMessageResult>(Client.BeginSendMessage, Client.EndSendMessage,
+                new SendMessageRequest
+                {
+                    MessageBody = GetMessageInContext(message),
+                    QueueUrl = Url
+                }, null);
+            return response.HttpStatusCode == HttpStatusCode.OK;
         }
 
         private static string GetMessageInContext(Message message)

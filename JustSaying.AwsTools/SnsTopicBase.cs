@@ -1,4 +1,6 @@
 using System.Linq;
+using System.Net;
+using System.Threading.Tasks;
 using Amazon.SimpleNotificationService;
 using Amazon.SimpleNotificationService.Model;
 using Amazon.SQS;
@@ -56,6 +58,23 @@ namespace JustSaying.AwsTools
                                });
 
             EventLog.Info("Published message: '{0}' with content {1}", messageType, messageToSend);
+        }
+
+        public async Task<bool> PublishAsync(Message message)
+        {
+            var messageToSend = _serialisationRegister.GetSerialiser(message.GetType()).Serialise(message);
+            var messageType = message.GetType().Name;
+
+            var response = await Task.Factory.FromAsync<PublishRequest, PublishResult>(Client.BeginPublish, Client.EndPublish,
+                new PublishRequest
+                {
+                    Subject = messageType,
+                    Message = messageToSend,
+                    TopicArn = Arn
+                }, null);
+
+            EventLog.Info("Published message: '{0}' with content {1}", messageType, messageToSend);
+            return response.HttpStatusCode == HttpStatusCode.OK;
         }
     }
 }

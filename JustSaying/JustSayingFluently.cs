@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Amazon;
 using JustSaying.AwsTools;
 using JustSaying.AwsTools.QueueCreation;
@@ -157,6 +158,18 @@ namespace JustSaying
                 throw new InvalidOperationException("You must register for message publication before publishing a message");
             
             Bus.Publish(message);
+        }
+
+        /// <summary>
+        /// Publish a message to the stack in asynchronous manner.
+        /// </summary>
+        /// <param name="message"></param>
+        public async Task<bool> PublishAsync(Message message)
+        {
+            if (Bus == null)
+                throw new InvalidOperationException("You must register for message publication before publishing a message");
+
+            return await Bus.PublishAsync(message);
         }
 
         /// <summary>
