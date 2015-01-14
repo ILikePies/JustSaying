@@ -21,6 +21,7 @@ namespace JustSaying.AwsTools
         private readonly IMessageMonitor _messagingMonitor;
         private readonly Action<Exception, Amazon.SQS.Model.Message> _onError;
         private readonly Dictionary<Type, List<Func<Message, bool>>> _handlers;
+        private readonly Dictionary<Type, List<Func<Message, Task<bool>>>> _asyncHandlers;
         private readonly IMessageLock _messageLock;
 
         private bool _listen = true;
@@ -36,6 +37,7 @@ namespace JustSaying.AwsTools
             _messagingMonitor = messagingMonitor;
             _onError = onError ?? ((ex,message) => { });
             _handlers = new Dictionary<Type, List<Func<Message, bool>>>();
+            _asyncHandlers = new Dictionary<Type, List<Func<Message, Task<bool>>>>();
             _messageProcessingStrategy = new MaximumThroughput();
             _messageLock = messageLock;
         }
@@ -135,6 +137,7 @@ namespace JustSaying.AwsTools
         public void HandleMessage(Amazon.SQS.Model.Message message)
         {
             _messageProcessingStrategy.ProcessMessage(new Task(() => ProcessMessageAction(message)));
+            _messageProcessingStrategy.ProcessMessage(new Task(async () => await ProcessMessageActionAsync(message)));
         }
 
         public void ProcessMessageAction(Amazon.SQS.Model.Message message)
@@ -195,6 +198,67 @@ namespace JustSaying.AwsTools
                 _onError(ex, message);
                 
             }
+        }
+
+        public async Task<bool> ProcessMessageActionAsync(Amazon.SQS.Model.Message message)
+        {
+            Message typedMessage = null;
+            string rawMessage = null;
+            try
+            {
+                var body = JObject.Parse(message.Body);
+                string messageType = body["Subject"].ToString();
+
+                rawMessage = body["Message"].ToString();
+                typedMessage = _serialisationRegister
+                    .GetSerialiser(messageType)
+                    .Deserialise(rawMessage);
+
+                var handlingSucceeded = true;
+
+                if (typedMessage != null)
+                {
+                    List<Func<Message, Task<bool>>> handlers;
+                    if (!_asyncHandlers.TryGetValue(typedMessage.GetType(), out handlers)) return true;
+
+                    foreach (var handle in handlers)
+                    {
+                        var watch = new System.Diagnostics.Stopwatch();
+                        watch.Start();
+
+                        handlingSucceeded = await handle(typedMessage);
+
+                        watch.Stop();
+                        Log.Trace("Handled message - MessageType: " + messageType);
+                        _messagingMonitor.HandleTime(watch.ElapsedMilliseconds);
+                    }
+                }
+
+                if (handlingSucceeded)
+                    _queue.Client.DeleteMessage(new DeleteMessageRequest { QueueUrl = _queue.Url, ReceiptHandle = message.ReceiptHandle });
+                return handlingSucceeded;
+
+            }
+            catch (KeyNotFoundException ex)
+            {
+                Log.Trace("Didn't handle message {0}. No serialiser setup", rawMessage ?? "");
+                _queue.Client.DeleteMessage(new DeleteMessageRequest
+                {
+                    QueueUrl = _queue.Url,
+                    ReceiptHandle = message.ReceiptHandle
+                });
+                _onError(ex, message);
+            }
+            catch (Exception ex)
+            {
+                Log.ErrorException(string.Format("Issue handling message... {0}. StackTrace: {1}", message, ex.StackTrace), ex);
+                if (typedMessage != null)
+                {
+                    _messagingMonitor.HandleException(typedMessage.GetType().Name);
+                }
+                _onError(ex, message);
+            }
+            return false;
         }
     }
 }

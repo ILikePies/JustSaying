@@ -1,4 +1,5 @@
-﻿using Amazon;
+﻿using System;
+using Amazon;
 using JustBehave;
 using JustSaying.Messaging.MessageHandling;
 using JustSaying.TestingFramework;
@@ -41,7 +42,7 @@ namespace JustSaying.IntegrationTests.JustSayingFluently
         [Then]
         public void AMessageCanStillBePublishedAndPopsOutTheOtherEnd()
         {
-            Patiently.VerifyExpectation(() => _handler.Received().Handle(Arg.Any<GenericMessage>()));
+            Patiently.VerifyExpectation(() => _handler.Received().Handle(Arg.Any<GenericMessage>()), TimeSpan.FromSeconds(10));
         }
 
         [TearDown]
