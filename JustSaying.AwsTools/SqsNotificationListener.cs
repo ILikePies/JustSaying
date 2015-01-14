@@ -80,6 +80,31 @@ namespace JustSaying.AwsTools
             handlers.Add(DelegateAdjuster.CastArgument<Message, T>(x => handler.Handle(x)));
         }
 
+        public void AddMessageHandler<T>(IAsyncHandler<T> handler) where T : Message
+        {
+            List<Func<Message, Task<bool>>> handlers;
+            if (!_asyncHandlers.TryGetValue(typeof(T), out handlers))
+            {
+                handlers = new List<Func<Message, Task<bool>>>();
+                _asyncHandlers.Add(typeof(T), handlers);
+            }
+            var guaranteedDelivery = new GuaranteedOnceDelivery<T>(handler);
+            if (guaranteedDelivery.Enabled)
+            {
+                if (_messageLock == null)
+                    throw new Exception("IMessageLock is null. You need to specify an implementation for IMessageLock.");
+
+                handler = new ExactlyOnceAsyncHandler<T>(handler, _messageLock, guaranteedDelivery.TimeOut);
+            }
+            var executionTimeMonitoring = _messagingMonitor as IMeasureHandlerExecutionTime;
+            if (executionTimeMonitoring != null)
+            {
+                handler = new StopwatchAsyncHandler<T>(handler, executionTimeMonitoring);
+            }
+
+            handlers.Add(DelegateAdjuster.CastArgument<Message, T>(x => handler.HandleAsync(x)));
+        }
+
         public void Listen()
         {
             _listen = true;
