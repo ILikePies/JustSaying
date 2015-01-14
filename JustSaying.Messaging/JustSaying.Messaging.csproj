@@ -67,6 +67,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="MessageHandling\ExactlyOnceAsyncHandler.cs" />
     <Compile Include="MessageHandling\ExactlyOnceAttribute.cs" />
     <Compile Include="MessageHandling\ExactlyOnceHandler.cs" />
     <Compile Include="MessageHandling\IAsyncHandler.cs" />
@@ -87,6 +88,7 @@
     <Compile Include="MessageSerialisation\MessageSerialisationRegister.cs" />
     <Compile Include="MessageSerialisation\NewtonsoftSerialiser.cs" />
     <Compile Include="Monitoring\NullOpMessageMonitor.cs" />
+    <Compile Include="Monitoring\StopwatchAsyncHandler.cs" />
     <Compile Include="Monitoring\StopwatchHandler.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
